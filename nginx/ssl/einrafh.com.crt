@@ -1,0 +1,7 @@
+# Placeholder SSL certificate for einrafh.com
+# Replace this with your actual SSL certificate from Let's Encrypt or your certificate authority
+
+-----BEGIN CERTIFICATE-----
+# This is a placeholder - replace with your actual certificate
+# You can obtain a free SSL certificate from Let's Encrypt
+-----END CERTIFICATE-----
