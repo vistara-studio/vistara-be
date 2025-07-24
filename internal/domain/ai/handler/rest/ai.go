@@ -5,32 +5,59 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vistara-studio/vistara-be/internal/infra/ai"
 	"github.com/vistara-studio/vistara-be/internal/middleware"
+	"github.com/vistara-studio/vistara-be/pkg/jwt"
 )
 
+// AIHandler handles AI-related HTTP requests
 type AIHandler struct {
 	aiClient  *ai.Client
 	validator *validator.Validate
+	jwt       *jwt.JWTStruct
 }
 
-func NewAIHandler(aiClient *ai.Client, validator *validator.Validate) *AIHandler {
+// NewAIHandler creates a new AI handler instance
+func NewAIHandler(aiClient *ai.Client, validator *validator.Validate, jwt *jwt.JWTStruct) *AIHandler {
 	return &AIHandler{
 		aiClient:  aiClient,
 		validator: validator,
+		jwt:       jwt,
 	}
 }
 
+// Mount registers AI routes on the router
 func (h *AIHandler) Mount(router fiber.Router) {
+	// Protected AI endpoints (requires JWT authentication)
 	aiGroup := router.Group("/ai")
-	aiGroup.Post("/smart-plan", h.GenerateSmartPlan)
+	aiGroup.Use(middleware.Authentication(h.jwt))
+	aiGroup.Post("/smart-planner", h.GenerateSmartPlan)
 
-	// Service-to-service notification endpoint from vistara-ai
+	// Service-to-service endpoints (requires service authentication)  
 	serviceGroup := router.Group("/service")
 	serviceGroup.Use(middleware.ServiceAuthentication())
 	serviceGroup.Post("/ai/notify", h.ReceiveNotification)
 }
 
+// GenerateSmartPlan handles smart travel plan generation requests
 func (h *AIHandler) GenerateSmartPlan(c *fiber.Ctx) error {
+	// Get user information from JWT token
+	userID, ok := c.Locals("user_id").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid user context",
+		})
+	}
+	
+	isPremiumInterface := c.Locals("is_premium")
+	isPremium, ok := isPremiumInterface.(bool)
+	if !ok {
+		// Default to false if not present or invalid
+		isPremium = false
+	}
+	
 	var req ai.SmartPlanRequest
+	
+	// Parse request body
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -38,6 +65,7 @@ func (h *AIHandler) GenerateSmartPlan(c *fiber.Ctx) error {
 		})
 	}
 
+	// Validate request
 	if err := h.validator.Struct(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -46,6 +74,11 @@ func (h *AIHandler) GenerateSmartPlan(c *fiber.Ctx) error {
 		})
 	}
 
+	// Add user context to the request
+	req.UserID = &userID
+	req.IsPremium = &isPremium
+
+	// Call AI service
 	response, err := h.aiClient.GenerateSmartPlan(&req)
 	if err != nil {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
@@ -59,6 +92,7 @@ func (h *AIHandler) GenerateSmartPlan(c *fiber.Ctx) error {
 		"success": true,
 		"message": "Smart plan generated successfully",
 		"data":    response,
+		"user_id": userID,
 	})
 }
 
@@ -71,6 +105,7 @@ func (h *AIHandler) ReceiveNotification(c *fiber.Ctx) error {
 		Timestamp string      `json:"timestamp"`
 	}
 
+	// Parse notification body
 	if err := c.BodyParser(&notification); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
@@ -78,8 +113,8 @@ func (h *AIHandler) ReceiveNotification(c *fiber.Ctx) error {
 		})
 	}
 
-	// Process the notification (you can add your business logic here)
-	// For example: log the event, update user data, send push notifications, etc.
+	// Process notification (extend with business logic as needed)
+	// Examples: log events, update user data, send push notifications
 
 	return c.JSON(fiber.Map{
 		"success": true,

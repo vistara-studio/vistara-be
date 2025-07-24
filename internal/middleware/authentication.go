@@ -32,6 +32,7 @@ func Authentication(jwt *jwt.JWTStruct) fiber.Handler {
 		}
 
 		ctx.Locals("user_id", claims.UserID)
+		ctx.Locals("is_premium", claims.IsPremium)
 		return ctx.Next()
 	}
 }
