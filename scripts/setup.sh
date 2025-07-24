@@ -261,7 +261,40 @@ ATTRACTION3_ID=$(echo "$ATTRACTION3" | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
 
 print_success "Created 3 test tourist attractions"
 
-# Step 9: Display setup summary
+# Step 9: Test AI Integration
+print_status "Testing AI integration..."
+
+# Check if vistara-ai is running
+AI_HEALTH=$(curl -s http://localhost:5000/health 2>/dev/null || echo "failed")
+if echo "$AI_HEALTH" | grep -q "failed"; then
+    print_warning "vistara-ai service not detected at http://localhost:5000"
+    print_warning "Please make sure vistara-ai is running for full integration"
+    print_warning "You can still test other endpoints without AI"
+else
+    print_success "vistara-ai service detected and healthy!"
+    
+    # Test AI smart planning
+    print_status "Testing AI smart planning..."
+    AI_PLAN_TEST=$(curl -s -X POST http://localhost:8080/api/ai/smart-plan \
+      -H "Content-Type: application/json" \
+      -d '{
+        "destination": "Yogyakarta",
+        "start_date": "2025-08-01T00:00:00Z",
+        "end_date": "2025-08-03T00:00:00Z",
+        "budget": 2000000,
+        "travel_style": "backpacker",
+        "activity_preferences": ["culture", "culinary", "historical"],
+        "activity_intensity": "balanced"
+      }' 2>/dev/null || echo "failed")
+    
+    if echo "$AI_PLAN_TEST" | grep -q "success"; then
+        print_success "AI smart planning integration working!"
+    else
+        print_warning "AI integration test failed, but service endpoints are ready"
+    fi
+fi
+
+# Step 10: Display setup summary
 print_success "🎉 Setup completed successfully!"
 echo ""
 echo "📊 SETUP SUMMARY:"
@@ -303,6 +336,14 @@ echo "• DELETE /api/tourist-attractions/{id} - Delete attraction"
 echo "• GET /api/tourist-attractions/{id}/availability - Get booking availability"
 echo "• POST /api/tourist-attractions/{id}/book - Create booking"
 echo ""
+echo "🤖 AI Integration Endpoints:"
+echo "• POST /api/ai/smart-plan - Generate AI travel plan"
+echo ""
+echo "🔗 Service-to-Service Endpoints (for vistara-ai):"
+echo "• GET /api/service/locals - Get businesses (X-Service: vistara-ai)"
+echo "• GET /api/service/tourist-attractions - Get attractions (X-Service: vistara-ai)"
+echo "• POST /api/service/ai/notify - Receive AI notifications (X-Service: vistara-ai)"
+echo ""
 echo "💡 EXAMPLE TEST COMMANDS:"
 echo "========================="
 echo "# Get JWT Token:"
@@ -318,6 +359,14 @@ echo ""
 echo "# Test GET all attractions:"
 echo 'curl -X GET http://localhost:8080/api/tourist-attractions \'
 echo '  -H "Authorization: Bearer $TOKEN"'
+echo ""
+echo "# Test AI Smart Planning:"
+echo 'curl -X POST http://localhost:8080/api/ai/smart-plan \'
+echo '  -H "Content-Type: application/json" \'
+echo '  -d '\''{"destination":"Bali","start_date":"2025-08-01T00:00:00Z","end_date":"2025-08-05T00:00:00Z","budget":5000000}'\'''
+echo ""
+echo "# Test Service Endpoints (for vistara-ai):"
+echo 'curl -H "X-Service: vistara-ai" http://localhost:8080/api/service/locals'
 echo ""
 if [ -n "$BUSINESS1_ID" ]; then
     echo "📋 CREATED RESOURCE IDs:"
