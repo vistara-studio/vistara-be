@@ -5,9 +5,10 @@ import (
 )
 
 // ServiceAuthentication middleware validates service-to-service requests
+// Only allows requests from vistara-ai service with proper X-Service header
 func ServiceAuthentication() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Check for service header
+		// Check for service authentication header
 		serviceHeader := c.Get("X-Service")
 		if serviceHeader == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -16,7 +17,7 @@ func ServiceAuthentication() fiber.Handler {
 			})
 		}
 
-		// Validate that the service is vistara-ai
+		// Validate that the request is from vistara-ai
 		if serviceHeader != "vistara-ai" {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"success": false,
