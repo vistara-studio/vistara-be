@@ -26,6 +26,12 @@ func New(service service.LocalServiceInterface, validator *validator.Validate, j
 
 // Mount registers all local business and tourist attraction routes
 func (h *LocalHandler) Mount(router fiber.Router) {
+	// Service-to-service routes for AI integration (with service authentication)
+	serviceGroup := router.Group("/service")
+	serviceGroup.Use(middleware.ServiceAuthentication())
+	serviceGroup.Get("/locals", h.GetAllLocalBusinesses)
+	serviceGroup.Get("/tourist-attractions", h.GetAllTouristAttractions)
+
 	// Local business routes - All require authentication
 	localGroup := router.Group("/locals")
 	localGroup.Use(middleware.Authentication(h.jwt))
