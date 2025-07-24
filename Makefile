@@ -1,9 +1,91 @@
 # Vistara Backend Makefile
-# Comprehensive development and deployment automation
+# Comprehensive development and deployment autrestart: ## 🔄 Restart all services
+	@echo "🔄 Restarting services..."
+	@docker compose restart
+	@echo "✅ Services restarted!"
+
+# === BASIC COMMANDS ===
+dev: ## 🚀 Start development server
+	@echo "🚀 Starting development server..."
+	@docker compose up -d
+	@echo "✅ Server running at http://localhost/"
+
+prod: ## 🔐 Start production server (requires SSL setup)
+	@echo "🔐 Starting production server..."
+	@docker compose up -d
+	@echo "✅ Production server running!"
+
+setup-ssl: ## 🔐 Manual SSL setup guide
+	@echo "🔐 SSL Certificate Setup Guide for GCP VM + Biznetgio Domain"
+	@echo "==========================================================="
+	@echo ""
+	@echo "📋 Prerequisites:"
+	@echo "1. GCP VM running with external IP"
+	@echo "2. Domain einrafh.com from Biznetgio"
+	@echo "3. Ports 80 and 443 open in GCP firewall"
+	@echo ""
+	@echo "🌐 DNS Setup (in Biznetgio panel):"
+	@echo "   A Record: einrafh.com → [your_gcp_vm_ip]"
+	@echo "   A Record: www.einrafh.com → [your_gcp_vm_ip]"
+	@echo ""
+	@echo "🔐 SSL Certificate (run on your GCP VM):"
+	@echo "   1. sudo apt update && sudo apt install certbot"
+	@echo "   2. make dev  # Start the server first"
+	@echo "   3. sudo certbot certonly --webroot -w ./nginx/certbot -d einrafh.com -d www.einrafh.com"
+	@echo "   4. sudo cp /etc/letsencrypt/live/einrafh.com/fullchain.pem ./nginx/ssl/einrafh.com.crt"
+	@echo "   5. sudo cp /etc/letsencrypt/live/einrafh.com/privkey.pem ./nginx/ssl/einrafh.com.key"
+	@echo "   6. sudo chown $$USER:$$USER ./nginx/ssl/einrafh.com.*"
+	@echo "   7. make prod  # Restart with SSL"
+	@echo ""
+
+setup-dev-ssl: ## 🔧 Setup self-signed SSL for development (no hosting required)
+	@echo "🔧 Setting up development SSL certificates..."
+	@./scripts/setup-dev-ssl.sh
+
+prod-env: ## 📄 Copy production environment template
+	@echo "📄 Copying production environment template..."
+	@cp .env.production .env
+	@echo "✅ Environment template copied to .env"
+	@echo "📝 Please edit .env file with your actual credentials"
+
+deploy: ## 🚀 Complete deployment (automated)
+	@echo "🚀 Starting automated deployment..."
+	@./scripts/deploy.sh
+
+nginx-logs: ## 📋 Show nginx logs
+	@echo "📋 Showing nginx logs..."
+	@docker compose logs -f nginx
+
+nginx-reload: ## 🔄 Reload nginx configuration
+	@echo "🔄 Reloading nginx configuration..."
+	@docker compose exec nginx nginx -s reload
+	@echo "✅ Nginx configuration reloaded!"
+
+# === MONITORING COMMANDS ===n
 
 include .env
 
 .PHONY: help setup reset-setup dev-setup build run test clean docker-build docker-run docker-clean logs status health info
+
+deploy: ## 🚀 Complete deployment for production VM
+	@echo "🚀 Deploying to production VM..."
+	@echo "================================"
+	@echo "📋 Checking prerequisites..."
+	@which docker > /dev/null || (echo "❌ Docker not found. Install: curl -fsSL https://get.docker.com | sh" && exit 1)
+	@which docker-compose > /dev/null || docker compose version > /dev/null || (echo "❌ Docker Compose not found" && exit 1)
+	@echo "✅ Docker ready"
+	@echo ""
+	@echo "📂 Setting up environment..."
+	@cp .env.production .env || echo "⚠️  .env.production not found, using existing .env"
+	@echo "✅ Environment configured"
+	@echo ""
+	@echo "🏗️ Building and starting services..."
+	@docker compose up --build -d
+	@echo ""
+	@echo "🎉 Deployment complete!"
+	@echo "📍 Server running at: http://[your-vm-ip]:80"
+	@echo ""
+	@echo "🔐 For HTTPS setup, run: make setup-ssl"
 
 # Default target
 help: ## 📋 Show available commands
