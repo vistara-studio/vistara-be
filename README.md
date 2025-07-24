@@ -1,188 +1,158 @@
 # 🏛️ Vistara Backend
 
-Tourism platform backend API for Indonesian local business and tourist attractions management.
+Indonesian tourism platform backend with AI-powered travel planning.
 
-## ✨ Features
+## ✨ Key Features
 
-- 🔐 **Authentication** - JWT-based user registration & login
-- 🏢 **Local Business CRUD** - Manage local businesses (restaurants, shops, etc.)
-- 🏛️ **Tourist Attractions CRUD** - Manage tourist destinations with booking
+- 🔐 **JWT Authentication** - Secure user registration & login
+- 🏢 **Local Business** - Manage restaurants, shops, accommodations  
+- 🏛️ **Tourist Attractions** - Destination management with bookings
 - 🤖 **AI Integration** - Smart travel planning via vistara-ai service
-- 💳 **Payment Integration** - Midtrans payment gateway
-- 📱 **RESTful API** - Complete REST endpoints with proper error handling
+- 💳 **Payment Gateway** - Midtrans integration
+- 🔗 **Microservice API** - Service-to-service communication
 
 ## 🛠️ Tech Stack
 
-- **Go 1.23** + **Fiber v2** (Web Framework)
-- **PostgreSQL** + **GORM** (Database)
-- **JWT** (Authentication)
-- **Docker** (Containerization)
-- **Midtrans** (Payment)
+**Backend:** Go 1.23 + Fiber v2 + PostgreSQL + Docker  
+**AI Integration:** HTTP client for vistara-ai service  
+**Payment:** Midtrans gateway  
+**Storage:** Supabase integration
 
 ## 🚀 Quick Start
 
-### One Command Setup
 ```bash
+# One command setup (recommended)
 make setup
+
+# Alternative: basic setup
+make dev-setup
+
+# Check status
+make status
+make health
 ```
 
-This will:
-- ✅ Start PostgreSQL & API containers
-- ✅ Run database migrations  
-- ✅ Create test users & sample data
-- ✅ Ready for testing at `http://localhost:8080`
+**Setup includes:** Docker containers, database migrations, test users, sample data, AI integration testing.
 
-### Manual Setup
-```bash
-# 1. Clone repository
-git clone https://github.com/vistara-studio/vistara-be.git
-cd vistara-be
-
-# 2. Copy environment file
-cp .env.example .env
-
-# 3. Start services
-docker compose up -d
-
-# 4. Check health
-curl http://localhost:8080/health
-```
-
-## 📋 Available Commands
+## 📋 Essential Commands
 
 ```bash
-make setup      # 🚀 Complete setup with test data
-make up         # 🔼 Start services  
-make down       # 🔽 Stop services
-make logs       # 📋 View logs
-make health     # ❤️ Check API health
-make help       # ℹ️ Show all commands
+make setup          # 🚀 Complete setup with test data
+make reset-setup    # 🔄 Full environment reset  
+make start          # ▶️ Start services
+make stop           # ⏹️ Stop services
+make logs           # 📋 View logs
+make test-all       # 🧪 Test all endpoints
+make help           # 📋 Show all commands (30+)
 ```
 
 ## 🌐 API Endpoints
 
-### 🔐 Authentication
+### Core Endpoints
 ```http
-POST /api/auth/register  # User registration
-POST /api/auth/login     # User login
-```
+# Authentication
+POST /api/auth/register
+POST /api/auth/login
 
-### 🏢 Local Business
-```http
-GET    /api/locals           # Get all businesses
-POST   /api/locals           # Create business
-GET    /api/locals/{id}      # Get specific business
-PUT    /api/locals/{id}      # Update business
-DELETE /api/locals/{id}      # Delete business
-```
+# Business Management (requires auth)
+CRUD /api/locals/*
+CRUD /api/tourist-attractions/*
 
-### 🏛️ Tourist Attractions  
-```http
-GET    /api/tourist-attractions           # Get all attractions
-POST   /api/tourist-attractions           # Create attraction
-GET    /api/tourist-attractions/{id}      # Get specific attraction
-PUT    /api/tourist-attractions/{id}      # Update attraction
-DELETE /api/tourist-attractions/{id}      # Delete attraction
-POST   /api/tourist-attractions/{id}/book # Create booking
-```
+# AI Integration
+POST /api/ai/smart-planner
 
-### ❤️ System
-```http
-GET /health  # Health check
+# Service-to-Service (for vistara-ai)
+GET /api/service/locals
+GET /api/service/tourist-attractions
+POST /api/service/ai/notify
 ```
 
 ## 🧪 Testing
 
-Get JWT token:
+### Quick Test
 ```bash
+# Get auth token
 TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"testuser1@vistara.com","password":"password123"}' \
   | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+
+# Test endpoints
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/locals
 ```
 
-Test endpoints:
+### Test Commands
 ```bash
-# Get all local businesses
-curl -H "Authorization: Bearer $TOKEN" \
-     http://localhost:8080/api/locals
-
-# Get all tourist attractions
-curl -H "Authorization: Bearer $TOKEN" \
-     http://localhost:8080/api/tourist-attractions
+make test-auth      # Authentication endpoints
+make test-ai        # AI integration  
+make test-service   # Service endpoints
+make test-all       # All endpoints
 ```
 
-## 📁 Project Structure
+## 🤖 AI Integration Example
 
-```
-├── cmd/api/              # Application entry point
-├── internal/domain/      # Business domains
-│   ├── user/            # User & authentication  
-│   ├── session/         # JWT session management
-│   └── local/           # Local business & attractions
-├── internal/infra/       # Infrastructure layer
-├── db/migrations/        # Database migrations
-└── scripts/              # Automation scripts
-```
+**Note:** AI endpoints require JWT authentication. First get a token:
 
-## 🔧 Environment Variables
-
-Key variables in `.env`:
 ```bash
-APP_PORT=8080
-POSTGRES_DB=vistara_db
-POSTGRES_USERNAME=vistara_user  
-POSTGRES_PASSWORD=vistara_password
-JWT_SECRET=your-jwt-secret
-MIDTRANS_SERVER_KEY=your-midtrans-key
-VISTARA_AI_URL=http://localhost:5000  # AI service integration
-```
-
-## 🤖 AI Integration
-
-Vistara-BE integrates with vistara-ai service for smart travel planning:
-
-### AI Endpoints
-```bash
-# Generate smart travel plan
-curl -X POST http://localhost:8080/api/ai/smart-plan \
+# Get JWT Token
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
+  -d '{"email":"testuser1@vistara.com","password":"password123"}' \
+  | jq -r '.payload.token')
+
+# Use AI Smart Planning (requires authentication)
+curl -X POST http://localhost:8080/api/ai/smart-planner \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "destination": "Bali",
-    "start_date": "2025-08-01T00:00:00Z",
-    "end_date": "2025-08-05T00:00:00Z",
-    "budget": 5000000,
-    "travel_style": "romantic_couple",
-    "activity_preferences": ["beach", "culture", "culinary"]
+    "destination": "Yogyakarta",
+    "start_date": "2025-06-10T00:00:00Z", 
+    "end_date": "2025-06-12T00:00:00Z",
+    "budget": 3000000,
+    "travel_style": "solo_traveler",
+    "activity_preferences": ["Nature Exploration", "History & culture", "Culinary"],
+    "activity_intensity": "balanced"
   }'
 ```
 
-### Service-to-Service Endpoints (for vistara-ai)
-```bash
-# Get local businesses (AI service access)
-curl -H "X-Service: vistara-ai" \
-     http://localhost:8080/api/service/locals
+**Note:** This endpoint proxies to `http://localhost:5000/api/v1/smart-planner` (vistara-ai service)
 
-# Get tourist attractions (AI service access)  
-curl -H "X-Service: vistara-ai" \
-     http://localhost:8080/api/service/tourist-attractions
+## 🔧 Configuration
+
+Key environment variables:
+```bash
+APP_PORT=8080
+POSTGRES_DB=vistara_db
+JWT_SECRET=your-jwt-secret
+MIDTRANS_SERVER_KEY=your-key
+VISTARA_AI_URL=http://localhost:5000
 ```
 
-### Testing AI Integration
-```bash
-# Test all AI integration features
-make test-ai-integration
-make test-service-endpoints
-make test-notification
+### AI Service Requirements
+For AI integration to work, ensure `vistara-ai` service is running at:
+- **Health Check:** `http://localhost:5000/api/v1/health`
+- **Smart Planner:** `http://localhost:5000/api/v1/smart-planner`
+
+## 📁 Structure
+
 ```
+├── cmd/api/           # Application entry point
+├── internal/
+│   ├── domain/        # Business logic (user, local, ai)
+│   ├── infra/         # Infrastructure (db, http, ai client)
+│   ├── middleware/    # HTTP middleware
+│   └── bootstrap/     # App initialization
+├── scripts/           # Setup automation
+└── db/migrations/     # Database migrations
+```
+
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/tourism-local-business-management-system`
-3. Commit changes: `git commit -m 'Add tourism management features'`
-4. Push to branch: `git push origin feature/tourism-local-business-management-system`
+1. Fork repository
+2. Create feature branch: `git checkout -b feature/your-feature`
+3. Commit: `git commit -m 'Add feature'`
+4. Push: `git push origin feature/your-feature`
 5. Create Pull Request
 
-## 📄 License
-
-Copyright (c) 2025 Muhammad Rafly Ash Shiddiqi
+---
+**Ready for development!** Run `make setup` to get started. 🚀
