@@ -70,7 +70,3 @@ target/
 coverage.txt
 coverage.html
 *.cover
-
-# Local storage
-storage/
-uploads/
