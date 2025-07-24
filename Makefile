@@ -3,7 +3,7 @@
 
 include .env
 
-.PHONY: help setup build run test clean docker-build docker-run docker-clean logs dev-setup production
+.PHONY: help setup reset-setup build run test clean docker-build docker-run docker-clean logs dev-setup production
 
 # Default target
 help: ## Show this help message
@@ -16,6 +16,11 @@ setup: ## 🚀 Complete setup with test data (ONE COMMAND SETUP)
 	@echo "🚀 Starting Vistara Backend complete setup..."
 	@chmod +x scripts/setup.sh
 	@./scripts/setup.sh
+
+reset-setup: ## 🔄 Reset and clean environment completely
+	@echo "🔄 Resetting Vistara Backend environment..."
+	@chmod +x scripts/reset-setup.sh
+	@./scripts/reset-setup.sh
 
 dev-setup: ## 🛠️ Setup for development (without test data)
 	@echo "🛠️ Setting up development environment..."
@@ -122,6 +127,30 @@ test-auth: ## 🔐 Test authentication endpoints
 		-H "Content-Type: application/json" \
 		-d '{"email":"testuser1@vistara.com","password":"password123"}' | jq . || echo "Response received"
 
+# AI Integration Testing Commands
+test-ai-integration: ## 🤖 Test AI integration endpoints
+	@echo "🤖 Testing AI integration..."
+	@curl -X POST http://localhost:8080/api/ai/smart-plan \
+		-H "Content-Type: application/json" \
+		-d '{"destination":"Bali","start_date":"2025-08-01T00:00:00Z","end_date":"2025-08-05T00:00:00Z","budget":5000000,"travel_style":"romantic_couple","activity_preferences":["beach","culture","culinary"],"activity_intensity":"balanced"}' | jq . || echo "Response received"
+
+test-service-endpoints: ## 🔗 Test service-to-service endpoints (for vistara-ai)
+	@echo "🔗 Testing service endpoints for vistara-ai..."
+	@echo "📍 Testing local businesses endpoint:"
+	@curl -X GET http://localhost:8080/api/service/locals \
+		-H "X-Service: vistara-ai" | jq . || echo "Response received"
+	@echo ""
+	@echo "📍 Testing tourist attractions endpoint:"
+	@curl -X GET http://localhost:8080/api/service/tourist-attractions \
+		-H "X-Service: vistara-ai" | jq . || echo "Response received"
+
+test-notification: ## 🔔 Test AI notification endpoint
+	@echo "🔔 Testing AI notification endpoint..."
+	@curl -X POST http://localhost:8080/api/service/ai/notify \
+		-H "X-Service: vistara-ai" \
+		-H "Content-Type: application/json" \
+		-d '{"event":"plan_generated","user_id":"test-user","data":{"destination":"Bali"},"timestamp":"2025-07-24T10:00:00Z"}' | jq . || echo "Response received"
+
 # Information Commands
 info: ## ℹ️ Show system information
 	@echo "ℹ️ Vistara Backend Information:"
@@ -138,9 +167,12 @@ info: ## ℹ️ Show system information
 	@echo "• Authentication: /api/auth/*"
 	@echo "• Local Business: /api/locals/*"
 	@echo "• Tourist Attractions: /api/tourist-attractions/*"
+	@echo "• AI Integration: /api/ai/*"
+	@echo "• Service Endpoints: /api/service/*"
 	@echo "• Health Check: /health"
 
 # Quick shortcuts
 up: docker-run ## 🔼 Quick start (alias for docker-run)
 down: stop ## 🔽 Quick stop (alias for stop)
+reset: reset-setup ## 🔄 Reset environment (alias for reset-setup)
 ps: status ## 📋 Show status (alias for status)
