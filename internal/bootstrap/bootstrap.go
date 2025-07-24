@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/vistara-studio/vistara-be/internal/infra/config"
+	"github.com/vistara-studio/vistara-be/internal/infra/ai"
 	"github.com/vistara-studio/vistara-be/internal/infra/db"
 	"github.com/vistara-studio/vistara-be/internal/infra/http"
 	"github.com/vistara-studio/vistara-be/internal/infra/logger"
@@ -45,6 +46,7 @@ type App struct {
 	jwt       *jwt.JWTStruct
 	storage   *supabasestorageuploader.Client
 	payment   paymentMidtrans
+	aiClient  *ai.Client
 }
 
 func Initialize() error {
@@ -63,6 +65,7 @@ func Initialize() error {
 	http := http.NewFiber()
 	storage := storage.New(env.StorageURL, env.StorageToken, env.StorageBucket)
 	pSnap, pCore := payment.New(env.MidtransKey)
+	aiClient := ai.NewClient(env.VistaraAIURL)
 
 	app = &App{
 		http:      http,
@@ -75,6 +78,7 @@ func Initialize() error {
 			snap:    pSnap,
 			coreapi: pCore,
 		},
+		aiClient: aiClient,
 	}
 
 	logger.New()

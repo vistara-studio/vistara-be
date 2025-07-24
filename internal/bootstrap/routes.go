@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	aiHandler "github.com/vistara-studio/vistara-be/internal/domain/ai/handler/rest"
 	"github.com/vistara-studio/vistara-be/internal/domain/local/handler/rest"
 	localRepository "github.com/vistara-studio/vistara-be/internal/domain/local/repository"
 	localService "github.com/vistara-studio/vistara-be/internal/domain/local/service"
@@ -28,8 +29,9 @@ func (app *App) registerRoutes(jwt *jwt.JWTStruct) {
 
 	authHandler := sessionHandler.New(authService, app.validator)
 	localHandler := rest.New(localService, app.validator, app.jwt)
+	aiHandler := aiHandler.NewAIHandler(app.aiClient, app.validator)
 
-	app.handlers = append(app.handlers, authHandler, localHandler)
+	app.handlers = append(app.handlers, authHandler, localHandler, aiHandler)
 }
 
 func (app *App) MountRoutes() {
