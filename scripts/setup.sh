@@ -1,23 +1,7 @@
 #!/bin/bash
 
 # Vistara Backend Complete Setup Script
-# Sets up the complete development environme# Regist# Create local user
-LOCAL_RESPONSE=$(curl -s -X POST http://localhost:8080/api/auth/register 
-  -H "Content-Type: application/json" 
-  -d '{
-    "full_name": "Local Business Owner",
-    "email": "local@vistara.com",
-    "password": "password123",
-    "confirm_password": "password123"
-  }' 2>/dev/null || echo "failed")ser 2
-USER2_RESPONSE=$(curl -s -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "full_name": "Test User 2",
-    "email": "testuser2@vistara.com",
-    "password": "password123",
-    "confirm_password": "password123"
-  }' 2>/dev/null || echo "failed")est data
+# Sets up the complete development environment
 
 set -e  # Exit on any error
 
