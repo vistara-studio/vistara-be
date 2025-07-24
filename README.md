@@ -7,6 +7,7 @@ Tourism platform backend API for Indonesian local business and tourist attractio
 - 🔐 **Authentication** - JWT-based user registration & login
 - 🏢 **Local Business CRUD** - Manage local businesses (restaurants, shops, etc.)
 - 🏛️ **Tourist Attractions CRUD** - Manage tourist destinations with booking
+- 🤖 **AI Integration** - Smart travel planning via vistara-ai service
 - 💳 **Payment Integration** - Midtrans payment gateway
 - 📱 **RESTful API** - Complete REST endpoints with proper error handling
 
@@ -134,6 +135,45 @@ POSTGRES_USERNAME=vistara_user
 POSTGRES_PASSWORD=vistara_password
 JWT_SECRET=your-jwt-secret
 MIDTRANS_SERVER_KEY=your-midtrans-key
+VISTARA_AI_URL=http://localhost:5000  # AI service integration
+```
+
+## 🤖 AI Integration
+
+Vistara-BE integrates with vistara-ai service for smart travel planning:
+
+### AI Endpoints
+```bash
+# Generate smart travel plan
+curl -X POST http://localhost:8080/api/ai/smart-plan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "destination": "Bali",
+    "start_date": "2025-08-01T00:00:00Z",
+    "end_date": "2025-08-05T00:00:00Z",
+    "budget": 5000000,
+    "travel_style": "romantic_couple",
+    "activity_preferences": ["beach", "culture", "culinary"]
+  }'
+```
+
+### Service-to-Service Endpoints (for vistara-ai)
+```bash
+# Get local businesses (AI service access)
+curl -H "X-Service: vistara-ai" \
+     http://localhost:8080/api/service/locals
+
+# Get tourist attractions (AI service access)  
+curl -H "X-Service: vistara-ai" \
+     http://localhost:8080/api/service/tourist-attractions
+```
+
+### Testing AI Integration
+```bash
+# Test all AI integration features
+make test-ai-integration
+make test-service-endpoints
+make test-notification
 ```
 ## 🤝 Contributing
 
