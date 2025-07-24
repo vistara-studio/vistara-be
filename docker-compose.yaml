@@ -1,0 +1,62 @@
+name: vistara-backend
+services:
+  app:
+    container_name: app
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_PORT: ${APP_PORT}
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - private-network
+
+  postgres:
+    container_name: postgres
+    env_file:
+      - .env
+    image: postgres:17-alpine
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USERNAME}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - private-network
+
+  migrate:
+    container_name: migrate
+    image: migrate/migrate:4
+    volumes:
+      - ./db/migrations:/db/migrations
+    command: ["-path", "/db/migrations", "-database", "postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - private-network
+
+volumes:
+  postgres-volume:
+    driver: local
+
+networks:
+  private-network:
+    driver: bridge
