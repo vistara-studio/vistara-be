@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Vistara Backend Reset Script  
-# Completely resets the development environment
+# Completely resets the development environment including AI integration
 
 set -e  # Exit on any error
 
@@ -36,11 +36,12 @@ echo ""
 echo "⚠️  WARNING: This will completely reset your environment!"
 echo ""
 echo "This will:"
-echo "• Stop and remove all containers"
+echo "• Stop and remove all containers (Backend, Database, Nginx)"
 echo "• Delete all database data and volumes"
 echo "• Remove Docker images (optional)"
 echo "• Clean build artifacts and caches"
-echo "• Remove temporary files"
+echo "• Remove temporary files and SSL certificates"
+echo "• Clear AI service integration logs"
 echo ""
 read -p "Are you sure you want to continue? (y/N): " -n 1 -r
 echo ""
@@ -91,12 +92,18 @@ go clean -cache -modcache -testcache 2>/dev/null || true
 # Step 6: Clean temporary files and logs
 print_status "Cleaning temporary files and logs..."
 rm -rf tmp/ temp/ *.log .docker/ 2>/dev/null || true
+rm -rf .ai-service-logs/ 2>/dev/null || true
 
-# Step 7: Clean any remaining application state
+# Step 7: Clean SSL certificates (keep examples)
+print_status "Cleaning SSL certificates..."
+find nginx/ssl/ -name "*.crt" -not -name "*.example" -delete 2>/dev/null || true
+find nginx/ssl/ -name "*.key" -not -name "*.example" -delete 2>/dev/null || true
+
+# Step 8: Clean any remaining application state
 print_status "Cleaning application state..."
 rm -rf .data/ data/ postgres-data/ 2>/dev/null || true
 
-# Step 8: Final system cleanup
+# Step 9: Final system cleanup
 print_status "Performing final cleanup..."
 docker system prune -f 2>/dev/null || true
 
@@ -104,18 +111,21 @@ print_success "🎉 Environment reset completed!"
 echo ""
 echo "📊 RESET SUMMARY"
 echo "================"
-echo "✅ Containers: Stopped and removed"
+echo "✅ Containers: Stopped and removed (Backend + Database + Nginx)"
 echo "✅ Volumes: Removed (all data cleared)"
 echo "✅ Networks: Cleaned up"
 echo "✅ Build artifacts: Removed"
 echo "✅ Temporary files: Cleaned up"
+echo "✅ SSL certificates: Reset (examples preserved)"
+echo "✅ AI service logs: Cleared"
 echo "✅ Application state: Reset"
 echo ""
 echo "🚀 NEXT STEPS"
 echo "============="
 echo "To start fresh:"
-echo "• Run 'make setup' for complete setup with test data"
+echo "• Run 'make setup' for complete setup with test data and AI integration"
 echo "• Run 'make dev-setup' for basic development setup"
 echo "• Run 'docker compose up -d' for manual startup"
+echo "• Ensure vistara-ai service is running at localhost:5000 for AI features"
 echo ""
 print_success "Ready for fresh setup! 🔄"

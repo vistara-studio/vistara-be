@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Vistara Backend Complete Setup Script
-# Sets up the complete development environment
+# Sets up the complete development environment with AI integration
 
 set -e  # Exit on any error
 
@@ -31,14 +31,23 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Check if .env exists
+if [ ! -f .env ]; then
+    print_warning "No .env file found. Copying from .env.example..."
+    cp .env.example .env
+    print_warning "Please update .env with your configuration before running setup again."
+    exit 1
+fi
+
 # Confirmation prompt
 echo ""
 echo "This will:"
 echo "• Stop and remove existing containers"
-echo "• Build and start fresh containers"
+echo "• Build and start fresh containers (Backend + Database + Nginx)"
 echo "• Run database migrations"
+echo "• Generate SSL certificates for development"
 echo "• Create test users and sample data"
-echo "• Test AI integration if available"
+echo "• Test AI integration endpoints"
 echo ""
 read -p "Continue with setup? (y/N): " -n 1 -r
 echo ""
@@ -187,14 +196,40 @@ print_status "Testing AI integration..."
 AI_HEALTH=$(curl -s http://localhost:5000/api/v1/health 2>/dev/null || echo "failed")
 if echo "$AI_HEALTH" | grep -q "failed"; then
     print_warning "vistara-ai service not detected at http://localhost:5000"
-    print_warning "AI smart planning will not be available"
+    print_warning "AI features (NusaLingo, Historical Stories, Smart Planning) will not be available"
 else
     print_success "vistara-ai service detected!"
     
-    # Test AI smart planning with authentication
-    AI_PLAN_TEST=$(curl -s -X POST http://localhost:8080/api/ai/smart-plan \
+    # Test AI NusaLingo with authentication
+    AI_NUSALINGO_TEST=$(curl -s -X POST http://localhost:8080/api/v1/user/nusalingo \
       -H "Content-Type: application/json" \
-      -H "Authorization: Bearer $TEST_TOKEN1" \
+      -H "Authorization: Bearer $USER1_TOKEN" \
+      -d '{
+        "from_language": "English",
+        "to_language": "Banjar",
+        "text": "Hello, welcome to Banjarmasin!"
+      }' 2>/dev/null || echo "failed")
+    
+    if echo "$AI_NUSALINGO_TEST" | grep -q "success"; then
+        print_success "AI NusaLingo translation working!"
+    fi
+
+    # Test AI Historical Story
+    AI_STORY_TEST=$(curl -s -X POST http://localhost:8080/api/v1/user/historical-story \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $USER1_TOKEN" \
+      -d '{
+        "location": "Banjarmasin"
+      }' 2>/dev/null || echo "failed")
+    
+    if echo "$AI_STORY_TEST" | grep -q "success"; then
+        print_success "AI Historical Story generation working!"
+    fi
+    
+    # Test AI Smart Planning
+    AI_PLAN_TEST=$(curl -s -X POST http://localhost:8080/api/v1/user/smart-planner \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $USER1_TOKEN" \
       -d '{
         "destination": "Yogyakarta",
         "start_date": "2025-06-10T00:00:00Z",
@@ -206,7 +241,7 @@ else
       }' 2>/dev/null || echo "failed")
     
     if echo "$AI_PLAN_TEST" | grep -q "success"; then
-        print_success "AI smart planning integration working!"
+        print_success "AI Smart Planning integration working!"
     fi
 fi
 
@@ -215,9 +250,9 @@ print_success "🎉 Setup completed successfully!"
 echo ""
 echo "📊 SETUP SUMMARY"
 echo "================"
-echo "✅ Services: Running on Docker"
+echo "✅ Services: Running on Docker (Backend + Database + Nginx)"
 echo "✅ Database: PostgreSQL ready with migrations"
-echo "✅ API: Available at http://localhost:8080"
+echo "✅ API: Available at http://localhost:8080 & https://localhost:8080"
 echo "✅ Test Users: 2 users created with authentication"
 echo "✅ Sample Data: 3 local businesses, 3 tourist attractions"
 echo "✅ AI Integration: ${AI_HEALTH//failed/Not Available}"
@@ -229,12 +264,17 @@ echo "User 2: testuser2@vistara.com / password123"
 echo ""
 echo "🌐 API ENDPOINTS"
 echo "================"
-echo "Health Check:     GET  /health"
-echo "Authentication:   POST /api/auth/register, /api/auth/login"
-echo "Local Business:   CRUD /api/locals/*"
+echo "Health Check:       GET  /health"
+echo "Authentication:     POST /api/auth/register, /api/auth/login"
+echo "Local Business:     CRUD /api/locals/*"
 echo "Tourist Attractions: CRUD /api/tourist-attractions/*"
-echo "AI Planning:      POST /api/ai/smart-plan"
-echo "Service Data:     GET  /api/service/* (for vistara-ai)"
+echo ""
+echo "🤖 AI ENDPOINTS (Requires Authentication)"
+echo "=========================================="
+echo "NusaLingo:          POST /api/v1/user/nusalingo"
+echo "Historical Stories: POST /api/v1/user/historical-story"
+echo "Smart Planning:     POST /api/v1/user/smart-planner"
+echo "Legacy AI Routes:   POST /api/ai/* (backward compatibility)"
 echo ""
 echo "🧪 QUICK TEST COMMANDS"
 echo "======================="
@@ -244,12 +284,22 @@ echo '  -H "Content-Type: application/json" \'
 echo '  -d '\''{"email":"testuser1@vistara.com","password":"password123"}'\'' \'
 echo '  | grep -o '\'"token":"[^"]*"'\'' | cut -d'\'"'\'' -f4)'
 echo ""
-echo "# Test endpoints"
+echo "# Test basic endpoints"
 echo 'curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/locals'
 echo 'curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/tourist-attractions'
 echo ""
-echo "# Test AI Smart Planning (requires authentication)"
-echo 'curl -X POST http://localhost:8080/api/ai/smart-planner \'
+echo "# Test AI Features (requires vistara-ai service)"
+echo 'curl -X POST http://localhost:8080/api/v1/user/nusalingo \'
+echo '  -H "Content-Type: application/json" \'
+echo '  -H "Authorization: Bearer $TOKEN" \'
+echo '  -d '\''{"from_language":"English","to_language":"Banjar","text":"Hello world"}'\'''
+echo ""
+echo 'curl -X POST http://localhost:8080/api/v1/user/historical-story \'
+echo '  -H "Content-Type: application/json" \'
+echo '  -H "Authorization: Bearer $TOKEN" \'
+echo '  -d '\''{"location":"Banjarmasin"}'\'''
+echo ""
+echo 'curl -X POST http://localhost:8080/api/v1/user/smart-planner \'
 echo '  -H "Content-Type: application/json" \'
 echo '  -H "Authorization: Bearer $TOKEN" \'
 echo '  -d '\''{"destination":"Yogyakarta","start_date":"2025-06-10T00:00:00Z","end_date":"2025-06-12T00:00:00Z","budget":300000}'\'''
