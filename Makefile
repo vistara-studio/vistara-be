@@ -1,5 +1,7 @@
 # Vistara Backend Makefile
-# Comprehensive development and deployment autrestart: ## 🔄 Restart all services
+# Comprehensive development and deployment automation
+
+restart: ## 🔄 Restart all services
 	@echo "🔄 Restarting services..."
 	@docker compose restart
 	@echo "✅ Services restarted!"
@@ -47,10 +49,6 @@ prod-env: ## 📄 Copy production environment template
 	@cp .env.production .env
 	@echo "✅ Environment template copied to .env"
 	@echo "📝 Please edit .env file with your actual credentials"
-
-deploy: ## 🚀 Complete deployment (automated)
-	@echo "🚀 Starting automated deployment..."
-	@./scripts/deploy.sh
 
 nginx-logs: ## 📋 Show nginx logs
 	@echo "📋 Showing nginx logs..."
