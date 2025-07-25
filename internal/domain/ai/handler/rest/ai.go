@@ -26,10 +26,20 @@ func NewAIHandler(aiClient *ai.Client, validator *validator.Validate, jwt *jwt.J
 
 // Mount registers AI routes on the router
 func (h *AIHandler) Mount(router fiber.Router) {
-	// Protected AI endpoints (requires JWT authentication)
+	// Protected AI endpoints (requires JWT authentication) - using /v1/user pattern like port 5000
+	v1Group := router.Group("/v1")
+	userGroup := v1Group.Group("/user")
+	userGroup.Use(middleware.Authentication(h.jwt))
+	userGroup.Post("/smart-planner", h.GenerateSmartPlan)
+	userGroup.Post("/nusalingo", h.GenerateNusaLingo)
+	userGroup.Post("/historical-story", h.GenerateHistoricalStory)
+
+	// Legacy AI endpoints (for backward compatibility)
 	aiGroup := router.Group("/ai")
 	aiGroup.Use(middleware.Authentication(h.jwt))
 	aiGroup.Post("/smart-planner", h.GenerateSmartPlan)
+	aiGroup.Post("/nusalingo", h.GenerateNusaLingo)
+	aiGroup.Post("/historical-story", h.GenerateHistoricalStory)
 
 	// Service-to-service endpoints (requires service authentication)  
 	serviceGroup := router.Group("/service")
@@ -91,6 +101,124 @@ func (h *AIHandler) GenerateSmartPlan(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"success": true,
 		"message": "Smart plan generated successfully",
+		"data":    response,
+		"user_id": userID,
+	})
+}
+
+// GenerateNusaLingo handles Nusantara language learning content generation requests
+func (h *AIHandler) GenerateNusaLingo(c *fiber.Ctx) error {
+	// Get user information from JWT token
+	userID, ok := c.Locals("user_id").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid user context",
+		})
+	}
+	
+	isPremiumInterface := c.Locals("is_premium")
+	isPremium, ok := isPremiumInterface.(bool)
+	if !ok {
+		// Default to false if not present or invalid
+		isPremium = false
+	}
+	
+	var req ai.NusaLingoRequest
+	
+	// Parse request body
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid request body",
+		})
+	}
+
+	// Validate request
+	if err := h.validator.Struct(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Validation failed",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Add user context to the request
+	req.UserID = &userID
+	req.IsPremium = &isPremium
+
+	// Call AI service
+	response, err := h.aiClient.GenerateNusaLingo(&req)
+	if err != nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"success": false,
+			"message": "AI service is currently unavailable",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Nusantara language content generated successfully",
+		"data":    response,
+		"user_id": userID,
+	})
+}
+
+// GenerateHistoricalStory handles historical story generation requests
+func (h *AIHandler) GenerateHistoricalStory(c *fiber.Ctx) error {
+	// Get user information from JWT token
+	userID, ok := c.Locals("user_id").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid user context",
+		})
+	}
+	
+	isPremiumInterface := c.Locals("is_premium")
+	isPremium, ok := isPremiumInterface.(bool)
+	if !ok {
+		// Default to false if not present or invalid
+		isPremium = false
+	}
+	
+	var req ai.HistoricalStoryRequest
+	
+	// Parse request body
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid request body",
+		})
+	}
+
+	// Validate request
+	if err := h.validator.Struct(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Validation failed",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Add user context to the request
+	req.UserID = &userID
+	req.IsPremium = &isPremium
+
+	// Call AI service
+	response, err := h.aiClient.GenerateHistoricalStory(&req)
+	if err != nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"success": false,
+			"message": "AI service is currently unavailable",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Historical story generated successfully",
 		"data":    response,
 		"user_id": userID,
 	})
