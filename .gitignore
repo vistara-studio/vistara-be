@@ -6,12 +6,16 @@
 *.dylib
 bin/
 dist/
+build/
 
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.cover
+coverage.txt
+coverage.html
 
 # Dependency directories (remove the comment below to include it)
 vendor/
@@ -62,12 +66,10 @@ temp/
 *.sqlite
 *.sqlite3
 
-# Build artifacts
-build/
-dist/
-target/
+# SSL Certificates (keep example, ignore actual certs)
+nginx/ssl/*.key
+nginx/ssl/*.crt
+!nginx/ssl/*.example
 
-# Coverage reports
-coverage.txt
-coverage.html
-*.cover
+# AI Service Communication
+.ai-service-logs/
