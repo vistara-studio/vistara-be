@@ -1,158 +1,257 @@
-# 🏛️ Vistara Backend
+# Vistara Backend
 
-Indonesian tourism platform backend with AI-powered travel planning.
+<div align="center">
+  <img src="assets/vistara-mockup.png" alt="Vistara AI Mockup" width="800"/>
+</div>
 
-## ✨ Key Features
+<br/>
 
-- 🔐 **JWT Authentication** - Secure user registration & login
-- 🏢 **Local Business** - Manage restaurants, shops, accommodations  
-- 🏛️ **Tourist Attractions** - Destination management with bookings
-- 🤖 **AI Integration** - Smart travel planning via vistara-ai service
-- 💳 **Payment Gateway** - Midtrans integration
-- 🔗 **Microservice API** - Service-to-service communication
-
-## 🛠️ Tech Stack
-
-**Backend:** Go 1.23 + Fiber v2 + PostgreSQL + Docker  
-**AI Integration:** HTTP client for vistara-ai service  
-**Payment:** Midtrans gateway  
-**Storage:** Supabase integration
+Backend API for Vistara - A culture and tourism-based digital platform integrating education, ticketing, navigation, and local language translation to preserve and promote Indonesian heritage.
 
 ## 🚀 Quick Start
 
 ```bash
-# One command setup (recommended)
+# Complete setup with test data
 make setup
 
-# Alternative: basic setup
-make dev-setup
+# Development mode
+make dev
 
-# Check status
-make status
-make health
+# Test all endpoints
+make test-all
 ```
 
-**Setup includes:** Docker containers, database migrations, test users, sample data, AI integration testing.
+## 📋 Main Features
 
-## 📋 Essential Commands
+### 🔐 Authentication System
+JWT-based authentication with user management and premium features.
+
+**Endpoints:**
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/profile` - Get user profile
+
+### 🏪 Local Business Management
+Comprehensive local business and tourist attraction management.
+
+**Endpoints:**
+- `GET /api/locals` - List local businesses
+- `GET /api/tourist-attractions` - List tourist attractions
+- `POST /api/locals` - Create local business (premium)
+
+### 🤖 AI Integration
+Seamless integration with vistara-ai service for intelligent features.
+
+**User Endpoints:** `POST /api/v1/user/*`
+```json
+// Smart Planner
+{
+  "destination": "Yogyakarta",
+  "start_date": "2025-06-10T00:00:00Z",
+  "end_date": "2025-06-12T00:00:00Z",
+  "budget": 300000,
+  "activity_preferences": ["Nature Exploration", "History & culture"],
+  "travel_style": "solo_traveler",
+  "activity_intensity": "balanced"
+}
+
+// Nusalingo Translation
+{
+  "from_language": "English",
+  "to_language": "Banjar",
+  "text": "Hello, how are you today?"
+}
+
+// Historical Story
+{
+  "location": "Borobudur Temple"
+}
+```
+
+**Service Endpoints:** `POST /api/v1/service/*` (for vistara-ai communication)
+
+### 📊 Data Management
+Complete CRUD operations for tourism data with PostgreSQL.
+
+## ⚙️ Configuration
+
+### Environment Variables
+```bash
+# Server
+APP_PORT=8080
+APP_ENV=development
+
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=vistara_user
+DB_PASSWORD=vistara_password
+DB_NAME=vistara_db
+
+# AI Service Integration
+VISTARA_AI_URL=http://localhost:5000
+VISTARA_AI_KEY=vistara-be-service-key
+
+# JWT
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRY=24h
+
+# Payment (Midtrans)
+MIDTRANS_SERVER_KEY=your_midtrans_server_key
+MIDTRANS_CLIENT_KEY=your_midtrans_client_key
+MIDTRANS_ENVIRONMENT=sandbox
+```
+
+### Performance Features
+- 🚀 **Fiber Framework** - High-performance HTTP framework
+- 🗄️ **PostgreSQL** - Robust relational database
+- 🔐 **JWT Authentication** - Secure token-based auth
+- 🐳 **Docker Support** - Containerized deployment
+- 🔄 **Auto Migration** - Database schema management
+
+## 🛠️ Development
 
 ```bash
-make setup          # 🚀 Complete setup with test data
-make reset-setup    # 🔄 Full environment reset  
-make start          # ▶️ Start services
-make stop           # ⏹️ Stop services
-make logs           # 📋 View logs
-make test-all       # 🧪 Test all endpoints
-make help           # 📋 Show all commands (30+)
-```
+# Setup development environment
+make dev-setup
 
-## 🌐 API Endpoints
+# Build application
+make build
 
-### Core Endpoints
-```http
-# Authentication
-POST /api/auth/register
-POST /api/auth/login
+# Run locally
+make run
 
-# Business Management (requires auth)
-CRUD /api/locals/*
-CRUD /api/tourist-attractions/*
+# Watch logs
+make logs
 
-# AI Integration
-POST /api/ai/smart-planner
+# Database operations
+make db-logs
+make db-shell
 
-# Service-to-Service (for vistara-ai)
-GET /api/service/locals
-GET /api/service/tourist-attractions
-POST /api/service/ai/notify
+# Docker commands
+make docker-build
+make docker-run
+make docker-clean
 ```
 
 ## 🧪 Testing
 
-### Quick Test
 ```bash
-# Get auth token
-TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"testuser1@vistara.com","password":"password123"}' \
-  | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+# Test individual services
+make test-auth         # Authentication
+make test-ai          # AI integration
+make test-local       # Local business
+make test-service     # Service endpoints
 
-# Test endpoints
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/locals
+# Health check
+make health
+
+# Run all tests
+make test-all
 ```
 
-### Test Commands
-```bash
-make test-auth      # Authentication endpoints
-make test-ai        # AI integration  
-make test-service   # Service endpoints
-make test-all       # All endpoints
-```
-
-## 🤖 AI Integration Example
-
-**Note:** AI endpoints require JWT authentication. First get a token:
-
-```bash
-# Get JWT Token
-TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"testuser1@vistara.com","password":"password123"}' \
-  | jq -r '.payload.token')
-
-# Use AI Smart Planning (requires authentication)
-curl -X POST http://localhost:8080/api/ai/smart-planner \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{
-    "destination": "Yogyakarta",
-    "start_date": "2025-06-10T00:00:00Z", 
-    "end_date": "2025-06-12T00:00:00Z",
-    "budget": 3000000,
-    "travel_style": "solo_traveler",
-    "activity_preferences": ["Nature Exploration", "History & culture", "Culinary"],
-    "activity_intensity": "balanced"
-  }'
-```
-
-**Note:** This endpoint proxies to `http://localhost:5000/api/v1/smart-planner` (vistara-ai service)
-
-## 🔧 Configuration
-
-Key environment variables:
-```bash
-APP_PORT=8080
-POSTGRES_DB=vistara_db
-JWT_SECRET=your-jwt-secret
-MIDTRANS_SERVER_KEY=your-key
-VISTARA_AI_URL=http://localhost:5000
-```
-
-### AI Service Requirements
-For AI integration to work, ensure `vistara-ai` service is running at:
-- **Health Check:** `http://localhost:5000/api/v1/health`
-- **Smart Planner:** `http://localhost:5000/api/v1/smart-planner`
-
-## 📁 Structure
+## 📁 Project Structure
 
 ```
-├── cmd/api/           # Application entry point
+vistara-be/
+├── cmd/api/                 # Application entry point
 ├── internal/
-│   ├── domain/        # Business logic (user, local, ai)
-│   ├── infra/         # Infrastructure (db, http, ai client)
-│   ├── middleware/    # HTTP middleware
-│   └── bootstrap/     # App initialization
-├── scripts/           # Setup automation
-└── db/migrations/     # Database migrations
+│   ├── bootstrap/          # App initialization
+│   ├── domain/             # Business logic
+│   │   ├── ai/            # AI integration
+│   │   ├── local/         # Local business
+│   │   ├── session/       # Authentication
+│   │   └── user/          # User management
+│   ├── infra/             # Infrastructure
+│   │   ├── ai/            # AI service client
+│   │   ├── config/        # Configuration
+│   │   ├── db/            # Database connection
+│   │   └── http/          # HTTP server
+│   └── middleware/        # HTTP middlewares
+├── db/migrations/          # Database migrations
+├── pkg/                   # Shared utilities
+├── scripts/               # Setup & maintenance scripts
+└── nginx/                 # Reverse proxy config
 ```
 
-## 🤝 Contributing
+## 🔧 Maintenance
 
-1. Fork repository
-2. Create feature branch: `git checkout -b feature/your-feature`
-3. Commit: `git commit -m 'Add feature'`
-4. Push: `git push origin feature/your-feature`
-5. Create Pull Request
+```bash
+# Reset project completely
+make reset-setup
+
+# Clean build artifacts
+make clean
+
+# Update dependencies
+make go-mod
+
+# Restart services
+make restart
+
+# Open container shell
+make shell
+```
+
+## 🐳 Docker Support
+
+```bash
+# Build & run with Docker Compose
+docker-compose up --build
+
+# Or with make commands
+make docker-build
+make docker-run
+
+# Production deployment
+make deploy
+```
+
+## 🌐 API Documentation
+
+All user endpoints require JWT authorization:
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+Service endpoints require service authentication:
+```
+X-Service: vistara-ai
+X-API-Key: <service-api-key>
+```
+
+Response format follows consistent JSON structure with proper error handling.
+
+## 🚀 Deployment
+
+### Development
+```bash
+make setup          # Complete setup
+make dev            # Start development
+```
+
+### Production VM
+```bash
+make deploy         # Auto deployment
+make setup-ssl      # HTTPS setup guide
+```
+
+## 🔗 Integration
+
+Works seamlessly with:
+- **vistara-ai** - AI service for smart features
+- **Midtrans** - Payment gateway integration
+- **PostgreSQL** - Primary database
+- **Nginx** - Reverse proxy and SSL
 
 ---
-**Ready for development!** Run `make setup` to get started. 🚀
+
+## 📄 License
+
+Copyright © 2025 [Muhammad Rafly Ash Shiddiqi](https://github.com/einrafh)
+
+Licensed under MIT License - see [LICENSE](LICENSE) file for complete details.
+
+---
+
+*Made with ❤️ for Indonesian tourism*
